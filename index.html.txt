@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photon Calculator</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>Photon Calculator</h1>
+    <form id="calculator">
+        <label>Input Power (nW): <input type="number" id="power_nW" value="10"></label><br><br>
+        <label>Attenuation (dB): <input type="number" id="attenuation_dB" value="50"></label><br><br>
+        <label>SDE (0-1): <input type="number" id="SDE" value="0.55" step="0.01"></label><br><br>
+        <button type="button" onclick="calculate()">Calculate</button>
+    </form>
+
+    <h2>Results</h2>
+    <p id="powerResult"></p>
+    <table id="resultsTable">
+        <thead>
+            <tr>
+                <th>Wavelength (nm)</th>
+                <th>Photons/s</th>
+                <th>Effective Photons/s</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script>
+        const wavelengths_nm = [650, 705, 787, 820, 830, 850, 878, 915, 940, 971,
+            980, 1064, 1310, 1490, 1548, 1550, 1580, 1625, 1692, 1855, 2001];
+
+        function calculate() {
+            const planck_constant = 6.626e-34; // Joule seconds
+            const speed_of_light = 3e8; // m/s
+
+            const power_nW = parseFloat(document.getElementById("power_nW").value);
+            const attenuation_dB = parseFloat(document.getElementById("attenuation_dB").value);
+            const SDE = parseFloat(document.getElementById("SDE").value);
+
+            const photons_per_s = wavelengths_nm.map(lambda_nm => {
+                return (power_nW * 1e-9 * Math.pow(10, -attenuation_dB / 10)) / 
+                       ((planck_constant * speed_of_light) / (lambda_nm * 1e-9));
+            });
+
+            const effective_photons_per_s = photons_per_s.map(photon => photon * SDE);
+
+            const power_pW = power_nW * 1e3 * Math.pow(10, -attenuation_dB / 10);
+            document.getElementById("powerResult").innerText = 
+                `Input power after ${attenuation_dB} dB attenuation is ${power_pW.toFixed(2)} picoWatts.`;
+
+            const resultsTable = document.querySelector("#resultsTable tbody");
+            resultsTable.innerHTML = "";
+
+            wavelengths_nm.forEach((lambda, index) => {
+                const row = `<tr>
+                    <td>${lambda}</td>
+                    <td>${photons_per_s[index].toExponential(2)}</td>
+                    <td>${effective_photons_per_s[index].toExponential(2)}</td>
+                </tr>`;
+                resultsTable.innerHTML += row;
+            });
+        }
+    </script>
+</body>
+</html>
